@@ -1,0 +1,46 @@
+# Put this file in your repo at: .github/workflows/heath-watch.yml
+name: Heath watch
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes (GitHub may run it a few minutes late)
+  workflow_dispatch:          # adds a "Run workflow" button for manual checks
+
+permissions:
+  contents: write             # lets the job save seen_listings.json back to the repo
+
+concurrency:
+  group: heath-watch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Check for new listings
+        run: python heath_watch.py
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+
+      - name: Save seen listings
+        run: |
+          if [ -f seen_listings.json ]; then
+            git config user.name "heath-watch"
+            git config user.email "heath-watch@users.noreply.github.com"
+            git add seen_listings.json
+            git diff --cached --quiet || (git commit -m "Update seen listings" && git push)
+          fi
