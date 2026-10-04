@@ -3,7 +3,7 @@ name: Heath watch
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 minutes (GitHub may run it a few minutes late)
+    - cron: "*/5 * * * *"   # every 5 minutes (GitHub may run it a few minutes late)
   workflow_dispatch:          # adds a "Run workflow" button for manual checks
 
 permissions:
